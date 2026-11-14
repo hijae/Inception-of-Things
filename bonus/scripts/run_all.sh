@@ -15,5 +15,7 @@ bash "$(dirname "$0")/install_k3d.sh"
 bash "$(dirname "$0")/install_helm.sh"
 bash "$(dirname "$0")/create_cluster.sh"
 bash "$(dirname "$0")/deploy_helm.sh"
+bash "$(dirname "$0")/path_gitlab.sh"
+
 
 log_info "All configuration pipelines completed successfully."
