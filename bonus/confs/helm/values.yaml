@@ -4,18 +4,24 @@ global:
     externalIP: 127.0.0.1
     https: true
     externalPort: 8443
+  
   ingress:
     configureCertmanager: false
   edition: ce
+  
   gatewayApi:
     enabled: false
     installEnvoy: false
+
+  initialRootPassword:
+      secret: "gitlab-root-password"
+      key: "password"
 
 cert-manager:
   installCRDs: true
 
 certmanager-issuer:
-  email: test-email@example.com
+  email: kyoulee@student.42seoul.kr
 
 prometheus:
   install: false
@@ -29,3 +35,15 @@ redis:
     enabled: false
 gitlab-runner:
   install: false
+
+gitlab:
+  gitlab-exporter:
+    enabled: false
+  sidekiq:
+    readinessProbe:
+      initialDelaySeconds: 60
+      failureThreshold: 6
+  webservice:
+    readinessProbe:
+      initialDelaySeconds: 60
+      failureThreshold: 6
