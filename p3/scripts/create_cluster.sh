@@ -52,7 +52,7 @@ else
   k3d cluster create --config="${K3D_CONFIG}"
 fi
 
-if k3d cluster list >/dev/null 2>&1; then
+if k3d cluster list "${CLUSTER_NAME}" >/dev/null 2>&1; then
   log_info "k3d cluster is running successfully. (Health Check PASS)"
 else
   log_error "Failed to verify k3d cluster status."

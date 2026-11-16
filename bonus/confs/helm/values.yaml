@@ -1,0 +1,45 @@
+global:
+  hosts:
+    domain: localhost
+    externalIP: 127.0.0.1
+    https: true
+    externalPort: 443
+  ingress:
+    configureCertmanager: false
+    annotations:
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+  edition: ce
+  
+  gatewayApi:
+    enabled: false
+    installEnvoy: false
+
+  initialRootPassword:
+      secret: "gitlab-root-password"
+      key: "password"
+
+prometheus:
+  install: false
+
+postgresql:
+  metrics:
+    enabled: false
+
+redis:
+  metrics:
+    enabled: false
+gitlab-runner:
+  install: false
+
+gitlab:
+  gitlab-exporter:
+    enabled: false
+  sidekiq:
+    readinessProbe:
+      initialDelaySeconds: 60
+      failureThreshold: 6
+  webservice:
+    readinessProbe:
+      initialDelaySeconds: 60
+      failureThreshold: 6
