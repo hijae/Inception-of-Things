@@ -115,6 +115,12 @@ log_info "Deploying GitLab with 20m timeout (Silent wait)..."
 log_info "Checking GitLab release status..."
 if helm status "${RELEASE_NAME}" -n "${NAMESPACE}" >/dev/null 2>&1; then
   log_info "GitLab release ('${RELEASE_NAME}') is already deployed. (Skipping installation)"
+  helm upgrade "${RELEASE_NAME}" "${CHART_NAME}" \
+    --version "${CHART_VERSION}" \
+    --namespace "${NAMESPACE}" \
+    -f "${VALUES_FILE}" \
+    --wait \
+    --timeout 20m
 else
   log_info "Deploying GitLab (Version: ${CHART_VERSION}). This process may take several minutes..."
   helm install "${RELEASE_NAME}" "${CHART_NAME}" \
@@ -128,17 +134,8 @@ fi
 log_info "Deployment complete. Closing monitoring popup window..."
 kill -9 "${POPUP_PID}" 2>/dev/null || true
 
-if helm status "${RELEASE_NAME}" -n "${NAMESPACE}" | grep -i -q "STATUS: deployed"; then
-  log_info "GitLab Helm deployment completed successfully. (Helm Status PASS)"
-else
-  log_error "GitLab deployment failed or is in an invalid state."
-  exit 1
-fi
-
 log_info "Waiting for essential GitLab pods to become ready (up to 15 minutes)..."
-if docker exec -i "${CLUSTER_NODE}" kubectl wait --namespace "${NAMESPACE}" --for=condition=ready pod --selector='!job-name' --timeout=900s >/dev/null 2>&1; then
-  
-  if helm status "${RELEASE_NAME}" -n "${NAMESPACE}" | grep -i -q "STATUS: deployed"; then
+if docker exec -i "${CLUSTER_NODE}" kubectl wait --namespace "${NAMESPACE}" --for=condition=ready pod --selector='!job-name' --timeout=900s >/dev/null 2>&1; then  if helm status "${RELEASE_NAME}" -n "${NAMESPACE}" | grep -i -q "STATUS: deployed"; then
     log_info "All GitLab pods are running successfully. (Health Check PASS)"
   else
     log_error "Pods are running, but Helm release status is invalid."
@@ -148,5 +145,12 @@ if docker exec -i "${CLUSTER_NODE}" kubectl wait --namespace "${NAMESPACE}" --fo
 else
   log_error "Some GitLab pods failed to become ready within the specified timeout."
   log_error "To investigate, run: docker exec -i ${CLUSTER_NODE} kubectl get pods -n ${NAMESPACE}"
+  exit 1
+fi
+
+if helm status "${RELEASE_NAME}" -n "${NAMESPACE}" | grep -i -q "STATUS: deployed"; then
+  log_info "GitLab Helm deployment completed successfully. (Helm Status PASS)"
+else
+  log_error "GitLab deployment failed or is in an invalid state."
   exit 1
 fi
