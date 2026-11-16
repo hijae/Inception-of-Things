@@ -28,15 +28,15 @@ source "$(dirname "$0")/libs/utils.sh"
 
 readonly GIT_ROOT=$(git rev-parse --show-toplevel)
 readonly K3D_CONFIG="./confs/k3d/config.yaml"
+readonly HELM_VALUES="./confs/helm/values.yaml"
 readonly NAMESPACE="gitlab"
-readonly GITLAB_HOST="gitlab.127.0.0.1.nip.io"
-readonly GITLAB_URL="https://${GITLAB_HOST}"
 readonly LOCAL_FILE="./confs/gitlab/create_gitlab_user.rb"
 readonly TARGET_FILE="/tmp/create_gitlab_user.rb"
 readonly REMOTE_REPO="kyoulee/Inception-of-Things.git"
 readonly CERT_FILE="${GIT_ROOT}/.git/gitlab-cert.pem"
 readonly GIT_USER="kyoulee"
 readonly GIT_PASS="password@1234"
+readonly COREDNS_CUSTOM_FILE="./confs/gitlab/coredns-custom.yaml"
 
 log_info "Verifying dependencies (docker, openssl, git)..."
 if ! command -v docker >/dev/null 2>&1; then
@@ -57,6 +57,18 @@ if [[ ! -f "${LOCAL_FILE}" ]]; then
   log_error "Ruby provisioning script not found: ${LOCAL_FILE}"
   exit 1
 fi
+
+
+readonly DOMAIN=$(grep -E '^\s*domain:' "${HELM_VALUES}" | head -n 1 | awk '{print $2}' | tr -d '""'"''")
+readonly GITLAB_HOST="gitlab.${DOMAIN}"
+
+if [[ -z "${GITLAB_HOST}" ]]; then
+  log_error "Failed to parse the GitLab host from the configuration file (${HELM_VALUES})."
+  exit 1
+fi
+
+readonly GITLAB_URL="https://${GITLAB_HOST}"
+
 
 readonly CLUSTER_NAME=$(grep -E '^\s*name:' "${K3D_CONFIG}" | head -n 1 | awk '{print $2}' | tr -d '""'"''")
 if [[ -z "${CLUSTER_NAME}" ]]; then
@@ -103,11 +115,22 @@ if ! echo -n | openssl s_client -showcerts -connect "${GITLAB_HOST}:443" 2>/dev/
   exit 1
 fi
 
+if [ ! -s "${CERT_FILE}" ]; then
+  log_error "Verification failed: Certificate file '${CERT_FILE}' is empty or was not created."
+  exit 1
+fi
+
+if ! openssl x509 -in "${CERT_FILE}" -noout > /dev/null 2>&1; then
+  log_error "Verification failed: The extracted file is not a valid PEM certificate."
+  exit 1
+fi
+
 log_info "State modification: Configuring Git SSL trust..."
 if ! git config http.sslCAInfo "${CERT_FILE}"; then
   log_error "Failed to configure Git to trust the extracted certificate."
   exit 1
 fi
+git config http.sslVerify false
 
 log_info "Evaluating current state of Git remote 'gitlab'..."
 if ! git remote get-url gitlab >/dev/null 2>&1; then
@@ -125,3 +148,4 @@ else
   log_error "Git push failed."
   exit 1
 fi
+
