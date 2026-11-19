@@ -33,7 +33,10 @@ fi
 # install & start k3s 
 
 echo "Setting up K3s Master with IP: $K3S_SERVER_IP"
-curl -sfL https://get.k3s.io | sh -
+if ! curl -sfL https://get.k3s.io | sh -; then
+    echo "[Error] K3s installation failed!" >&2
+    exit 1
+fi
 echo "K3s is up!"
 
 # status log
@@ -88,7 +91,7 @@ wait_for_deployments() {
     fi
 }
 
-wait_for_deployments app-one app-two app-three
+wait_for_deployments app-one app-two app-three || exit 1
 
 echo "🎉 All apps are ready to serve traffic!"
 
