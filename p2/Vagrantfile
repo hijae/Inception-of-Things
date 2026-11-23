@@ -61,7 +61,10 @@ Vagrant.configure("2") do |config|
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
-  config.vm.box = "base"
+  config.vm.box = "debian/trixie64"
+  config.vm.box_url = "https://vagrantcloud.com/debian/trixie64"
+  # The box shares /vagrant over NFS by default; files are copied by provisioners instead.
+  config.vm.synced_folder ".", "/vagrant", disabled: true
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -118,7 +121,6 @@ Vagrant.configure("2") do |config|
 
   config.vm.define "kyouleeS" do |s|
     s.vm.hostname = "kyouleeS"
-    s.vm.box = "generic/ubuntu2004"
     s.vm.network "private_network",
       ip: "192.168.56.110",
       libvirt__network_name: "#{iot_net_name}",
@@ -139,7 +141,13 @@ Vagrant.configure("2") do |config|
     s.vm.synced_folder "#{host_scripts_path}/server", "/vagrant/scripts",
       type: "rsync",
       rsync__args: ["--verbose", "--archive", "-z", "--copy-links"]
-    s.vm.provision "shell", path: "./scripts/server/network-setting.sh"
+    s.vm.provision "shell", run: "always", inline: <<-SHELL
+      # Make the private network the default route (primary interface of the subject).
+      iface=$(ip -o -4 addr show | awk '/192\.168\.56\./ {print $2}')
+      ip route del default 2>/dev/null || true
+      ip route replace default via 192.168.56.1 dev "$iface"
+    SHELL
+    s.vm.provision "shell", inline: "apt-get update -qq && apt-get install -y -qq curl"
     s.vm.provision "shell", path: "./scripts/server/server.sh"
   end
 
