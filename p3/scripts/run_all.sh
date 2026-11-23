@@ -16,6 +16,7 @@ log_info "Starting infrastructure configuration pipeline..."
 
 bash "$(dirname "$0")/install_docker.sh"
 bash "$(dirname "$0")/install_k3d.sh"
+bash "$(dirname "$0")/install_kubectl.sh"
 bash "$(dirname "$0")/create_cluster.sh"
 bash "$(dirname "$0")/deploy_argocd.sh"
 

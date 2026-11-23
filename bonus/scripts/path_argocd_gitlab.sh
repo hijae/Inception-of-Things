@@ -21,7 +21,7 @@ source "$(dirname "$0")/libs/utils.sh"
 
 readonly K3D_CONFIG="../p3/confs/k3d/config.yaml"
 readonly COREDNS_CUSTOM_FILE="./confs/gitlab/coredns-custom.yaml"
-readonly ARGOCD_SECRET_FILE="../p3/confs/server/argocd/secret.yaml"
+readonly ARGOCD_SECRET_FILE="./confs/gitlab/secret.yaml"
 readonly ARGOCD_APPLICATION_FILE="./confs/gitlab/application.yaml"
 readonly NAMESPACE="argocd"
 
